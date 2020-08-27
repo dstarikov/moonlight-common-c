@@ -68,14 +68,22 @@ void LiStopConnection(void) {
         Limelog("done\n");
     }
     if (stage == STAGE_AUDIO_STREAM_START) {
-        Limelog("Stopping audio stream...");
-        stopAudioStream();
+        if (AudioCallbacks.capabilities != -1) {
+            Limelog("Stopping audio stream...");
+            stopAudioStream();
+        } else {
+            Limelog("No audio stream to stop...");
+        }
         stage--;
         Limelog("done\n");
     }
     if (stage == STAGE_VIDEO_STREAM_START) {
-        Limelog("Stopping video stream...");
-        stopVideoStream();
+        if (VideoCallbacks.capabilities != -1) {
+            Limelog("Stopping video stream...");
+            stopVideoStream();
+        } else {
+            Limelog("No video stream to stop...");
+        }
         stage--;
         Limelog("done\n");
     }
@@ -92,14 +100,22 @@ void LiStopConnection(void) {
         Limelog("done\n");
     }
     if (stage == STAGE_AUDIO_STREAM_INIT) {
-        Limelog("Cleaning up audio stream...");
-        destroyAudioStream();
+        if (AudioCallbacks.capabilities != -1) {
+            Limelog("Cleaning up audio stream...");
+            destroyAudioStream();
+        } else {
+            Limelog("No audio stream to clean up...");
+        }
         stage--;
         Limelog("done\n");
     }
     if (stage == STAGE_VIDEO_STREAM_INIT) {
-        Limelog("Cleaning up video stream...");
-        destroyVideoStream();
+        if (VideoCallbacks.capabilities != -1) {
+            Limelog("Cleaning up video stream...");
+            destroyVideoStream();
+        } else {
+            Limelog("No video stream to clean up...");
+        }
         stage--;
         Limelog("done\n");
     }
@@ -311,7 +327,9 @@ int LiStartConnection(PSERVER_INFORMATION serverInfo, PSTREAM_CONFIGURATION stre
 
     Limelog("Initializing video stream...");
     ListenerCallbacks.stageStarting(STAGE_VIDEO_STREAM_INIT);
-    initializeVideoStream();
+    if (drFlags != -1) {
+        initializeVideoStream();
+    }
     stage++;
     LC_ASSERT(stage == STAGE_VIDEO_STREAM_INIT);
     ListenerCallbacks.stageComplete(STAGE_VIDEO_STREAM_INIT);
@@ -319,7 +337,9 @@ int LiStartConnection(PSERVER_INFORMATION serverInfo, PSTREAM_CONFIGURATION stre
 
     Limelog("Initializing audio stream...");
     ListenerCallbacks.stageStarting(STAGE_AUDIO_STREAM_INIT);
-    initializeAudioStream();
+    if (arFlags != -1) {
+        initializeAudioStream();
+    }
     stage++;
     LC_ASSERT(stage == STAGE_AUDIO_STREAM_INIT);
     ListenerCallbacks.stageComplete(STAGE_AUDIO_STREAM_INIT);
@@ -348,7 +368,12 @@ int LiStartConnection(PSERVER_INFORMATION serverInfo, PSTREAM_CONFIGURATION stre
 
     Limelog("Starting video stream...");
     ListenerCallbacks.stageStarting(STAGE_VIDEO_STREAM_START);
-    err = startVideoStream(renderContext, drFlags);
+    if (drFlags == -1) {
+        VideoCallbacks.capabilities = -1;
+        err = 0;
+    } else {
+        err = startVideoStream(renderContext, drFlags);
+    }
     if (err != 0) {
         Limelog("Video stream start failed: %d\n", err);
         ListenerCallbacks.stageFailed(STAGE_VIDEO_STREAM_START, err);
@@ -361,7 +386,12 @@ int LiStartConnection(PSERVER_INFORMATION serverInfo, PSTREAM_CONFIGURATION stre
 
     Limelog("Starting audio stream...");
     ListenerCallbacks.stageStarting(STAGE_AUDIO_STREAM_START);
-    err = startAudioStream(audioContext, arFlags);
+    if (arFlags == -1) {
+        AudioCallbacks.capabilities = -1;
+        err = 0;
+    } else {
+        err = startAudioStream(audioContext, arFlags);
+    }
     if (err != 0) {
         Limelog("Audio stream start failed: %d\n", err);
         ListenerCallbacks.stageFailed(STAGE_AUDIO_STREAM_START, err);
